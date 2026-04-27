@@ -1,17 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "experimentalServices": {
-    "frontend": {
-      "entrypoint": "App Ui",
-      "routePrefix": "/",
-      "framework": "vite"
-    },
-    "backend": {
-      "entrypoint": "backend",
-      "routePrefix": "/api",
-      "framework": null
-    }
-  },
   "installCommand": "npm install && npm --prefix \"App Ui\" install && npm --prefix backend install",
   "buildCommand": "npm --prefix \"App Ui\" run build",
   "outputDirectory": "App Ui/dist",
