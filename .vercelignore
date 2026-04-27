@@ -1,0 +1,4 @@
+# Exclude the legacy frontend folder so Vercel does not detect
+# this repo as a multi-service monorepo. The actual frontend is
+# built from "App Ui/" via the buildCommand in vercel.json.
+frontend/

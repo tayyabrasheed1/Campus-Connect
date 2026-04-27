@@ -1,0 +1,66 @@
+module.exports = [
+  {
+    question: "How can I register for an event?",
+    answer: "Go to Events, open the event card, and click Register.",
+    category: "events",
+    keywords: ["register", "event", "ticket"],
+    sourceType: "faq",
+    audience: ["all"],
+  },
+  {
+    question: "How can I verify my student status?",
+    answer: "Open profile verification and upload your student ID card.",
+    category: "verification",
+    keywords: ["verify", "student", "id", "card"],
+    sourceType: "faq",
+    audience: ["student"],
+  },
+  {
+    question: "What should I do if I feel unsafe on campus?",
+    answer: "Use the Safety Report form from the app and share complete details.",
+    category: "safety",
+    keywords: ["unsafe", "safety", "report", "security"],
+    sourceType: "policy",
+    policyCode: "SAFE-101",
+    audience: ["all"],
+  },
+  {
+    question: "Can admins suspend users?",
+    answer: "Yes, authorized admins can suspend users from the admin dashboard.",
+    category: "admin",
+    keywords: ["admin", "suspend", "user", "dashboard"],
+    sourceType: "policy",
+    policyCode: "MOD-401",
+    audience: ["all"],
+  },
+  {
+    question: "How many credit hours should I take in a semester?",
+    answer:
+      "Students are advised to take 15-18 credit hours per semester. First semester students should prioritize mandatory core courses.",
+    category: "academics",
+    keywords: ["credit hours", "semester", "courses", "academic guidance"],
+    sourceType: "handbook",
+    policyCode: "HB-ACA-02",
+    audience: ["student"],
+  },
+  {
+    question: "How can alumni request transcripts?",
+    answer:
+      "Alumni can request transcripts from the registrar office by submitting the alumni request form and clearance details.",
+    category: "alumni",
+    keywords: ["alumni", "transcript", "registrar", "documents"],
+    sourceType: "handbook",
+    policyCode: "HB-ALM-06",
+    audience: ["alumni"],
+  },
+  {
+    question: "What is the faculty leave policy?",
+    answer:
+      "Faculty leave requests must be submitted through department administration at least 7 days in advance except emergencies.",
+    category: "faculty",
+    keywords: ["faculty", "leave", "policy", "department"],
+    sourceType: "policy",
+    policyCode: "FAC-LEAVE-11",
+    audience: ["faculty"],
+  },
+];

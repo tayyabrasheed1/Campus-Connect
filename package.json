@@ -1,0 +1,15 @@
+{
+  "name": "campus-platform",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently -n backend,app-ui -c blue,green \"npm --prefix backend run dev\" \"npm --prefix \\\"App Ui\\\" run dev\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix \\\"App Ui\\\" run dev",
+    "build": "npm --prefix \\\"App Ui\\\" run build",
+    "start": "npm --prefix backend run start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
