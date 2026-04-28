@@ -1,0 +1,7 @@
+# Backend service ignore file
+node_modules/
+.env
+.env.local
+*.log
+dist/
+build/
