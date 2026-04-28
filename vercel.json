@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "installCommand": "npm install && npm --prefix backend install && npm --prefix \"App Ui\" install",
-  "buildCommand": "npm --prefix \"App Ui\" run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "App Ui/dist",
   "functions": {
     "api/[...path].js": {
