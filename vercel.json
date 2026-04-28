@@ -4,20 +4,19 @@
   "experimentalServices": {
     "frontend": {
       "entrypoint": "App Ui",
-      "config": {
-        "runtime": "nodejs20.x"
-      }
+      "routePrefix": "/",
+      "framework": "vite",
+      "installCommand": "npm install",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist"
     },
     "backend": {
       "entrypoint": "backend",
-      "config": {
-        "runtime": "nodejs20.x"
-      }
+      "routePrefix": "/_backend",
+      "framework": "node",
+      "installCommand": "npm install"
     }
   },
-  "buildCommand": "npm --prefix 'App Ui' run build",
-  "installCommand": "npm install && npm --prefix backend install && npm --prefix 'App Ui' install",
-  "outputDirectory": "App Ui/dist",
   "functions": {
     "api/[...path].js": {
       "maxDuration": 30
