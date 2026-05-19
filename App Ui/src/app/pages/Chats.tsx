@@ -300,16 +300,21 @@ export function Chats() {
       };
       reader.readAsDataURL(file);
     } else {
-      const outgoing: ChatMessage = {
-        id: `m-local-${Date.now()}`,
-        sender: "Me", text: `📎 ${file.name}`,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        isMe: true, type: "file", fileName: file.name,
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        const outgoing: ChatMessage = {
+          id: `m-local-${Date.now()}`,
+          sender: "Me", text: `📎 ${file.name}`,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isMe: true, type: "file", fileName: file.name, fileData: dataUrl,
+        };
+        setMsgs((prev) => [...prev, outgoing]);
+        setMessagesByRoom((prev) => ({ ...prev, [activeChat]: [...(prev[activeChat] ?? []), outgoing] }));
+        try { await chatApi.sendMessage(activeChat, `📎 ${file.name}`, { type: "file", fileData: dataUrl, fileName: file.name }); } catch { /**/ }
+        loadRooms();
       };
-      setMsgs((prev) => [...prev, outgoing]);
-      setMessagesByRoom((prev) => ({ ...prev, [activeChat]: [...(prev[activeChat] ?? []), outgoing] }));
-      try { await chatApi.sendMessage(activeChat, `📎 ${file.name}`, { type: "file", fileName: file.name }); } catch { /**/ }
-      loadRooms();
+      reader.readAsDataURL(file);
     }
   };
 
