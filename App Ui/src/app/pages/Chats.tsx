@@ -384,12 +384,22 @@ export function Chats() {
                     <img src={msg.fileData} alt={msg.fileName ?? "image"} className="max-w-[200px] max-h-[200px] object-cover" />
                   </div>
                 ) : msg.type === "file" ? (
-                  <div className={`px-4 py-2.5 rounded-2xl text-sm flex items-center gap-2 ${
-                    msg.isMe ? "bg-[#FF6B2B] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
-                  }`}>
-                    <FileText size={14} />
-                    <span>{msg.fileName ?? msg.text}</span>
-                  </div>
+                  // If the message includes fileData (data URL), make it clickable/downloadable.
+                  (msg.fileData ? (
+                    <a href={msg.fileData} download={msg.fileName} target="_blank" rel="noreferrer" className={`px-4 py-2.5 rounded-2xl text-sm flex items-center gap-2 ${
+                      msg.isMe ? "bg-[#FF6B2B] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
+                    }`}>
+                      <FileText size={14} />
+                      <span className="underline">{msg.fileName ?? msg.text}</span>
+                    </a>
+                  ) : (
+                    <div className={`px-4 py-2.5 rounded-2xl text-sm flex items-center gap-2 ${
+                      msg.isMe ? "bg-[#FF6B2B] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
+                    }`}>
+                      <FileText size={14} />
+                      <span>{msg.fileName ?? msg.text}</span>
+                    </div>
+                  ))
                 ) : (
                   <div className={`px-4 py-2.5 rounded-2xl text-sm ${
                     msg.isMe ? "bg-[#FF6B2B] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
