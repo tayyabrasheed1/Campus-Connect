@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, Send, Paperclip, Image, ChevronLeft,
   Users, Info, Lock, Megaphone, Pin, FileText,
@@ -121,6 +121,15 @@ export function Chats() {
   // ── Secure in-domain check ──────────────────────────────────────────────────
   const isDomainUser = Boolean(user?.email?.endsWith("@szabist-isb.edu.pk"));
 
+  // ── Auto-open room from Marketplace redirect ───────────────────────────────
+  useEffect(() => {
+    const savedActiveChat = localStorage.getItem("cc_active_chat_id");
+    if (savedActiveChat) {
+      setActiveChat(savedActiveChat);
+      localStorage.removeItem("cc_active_chat_id"); // Clear to prevent sticky opens
+    }
+  }, []);
+
   // ── Load rooms ──────────────────────────────────────────────────────────────
   const loadRooms = useCallback(async () => {
     setIsLoadingRooms(true);
@@ -135,7 +144,13 @@ export function Chats() {
           ? (payload as { rooms: Array<Record<string, unknown>> }).rooms
           : [];
 
-      if (source.length === 0) { setRooms(demoChatRooms); return; }
+      const customRaw = localStorage.getItem("cc_custom_chat_rooms");
+      const customRooms = customRaw ? JSON.parse(customRaw) : [];
+
+      if (source.length === 0) {
+        setRooms([...customRooms, ...demoChatRooms]);
+        return;
+      }
 
       const normalized = source.map((room) => {
         const name = String(room.name ?? "Campus Chat");
@@ -153,9 +168,11 @@ export function Chats() {
           isBroadcast: Boolean(room.isBroadcast ?? false),
         } satisfies ChatRoom;
       });
-      setRooms(normalized);
+      setRooms([...customRooms, ...normalized]);
     } catch {
-      setRooms(demoChatRooms);
+      const customRaw = localStorage.getItem("cc_custom_chat_rooms");
+      const customRooms = customRaw ? JSON.parse(customRaw) : [];
+      setRooms([...customRooms, ...demoChatRooms]);
     } finally {
       setIsLoadingRooms(false);
     }
@@ -170,6 +187,15 @@ export function Chats() {
       setMsgs(messagesByRoom[activeChat]);
       return;
     }
+
+    if (activeChat.startsWith("m-chat-")) {
+      const customMsgsRaw = localStorage.getItem(`cc_msgs_${activeChat}`);
+      const customMsgs = customMsgsRaw ? JSON.parse(customMsgsRaw) : [];
+      setMessagesByRoom((prev) => ({ ...prev, [activeChat]: customMsgs }));
+      setMsgs(customMsgs);
+      return;
+    }
+
     (async () => {
       try {
         const payload = (await chatApi.messages(activeChat)) as unknown as {
@@ -195,7 +221,7 @@ export function Chats() {
 
   // ── Real-time SSE subscription ───────────────────────────────────────────────
   useEffect(() => {
-    if (!activeChat) return;
+    if (!activeChat || activeChat.startsWith("m-chat-")) return;
     const token = localStorage.getItem("cc_token");
     const url = `/api/chats/${activeChat}/stream${token ? `?token=${encodeURIComponent(token)}` : ""}`;
     const es = new EventSource(url);
@@ -238,6 +264,7 @@ export function Chats() {
     const userBatch = user?.batch?.toLowerCase() ?? "";
     const userDept  = user?.dept?.toLowerCase()  ?? "";
     return rooms.filter((r) => {
+      if (r.id.startsWith("m-chat-")) return true; // Keep marketplace custom rooms pinned
       if (userBatch && r.batch && r.batch.toLowerCase() === userBatch) return true;
       if (userDept  && r.dept  && r.dept.toLowerCase().includes(userDept)) return true;
       if (r.isBroadcast) return true;
@@ -273,6 +300,63 @@ export function Chats() {
     setMsgs((prev) => [...prev, outgoing]);
     setMessagesByRoom((prev) => ({ ...prev, [activeChat]: [...(prev[activeChat] ?? []), outgoing] }));
     setNewMsg("");
+
+    // If it's a custom marketplace room, persist to localStorage
+    if (activeChat.startsWith("m-chat-")) {
+      const customMsgsRaw = localStorage.getItem(`cc_msgs_${activeChat}`);
+      const customMsgs = customMsgsRaw ? JSON.parse(customMsgsRaw) : [];
+      const updated = [...customMsgs, outgoing];
+      localStorage.setItem(`cc_msgs_${activeChat}`, JSON.stringify(updated));
+
+      // Update room lastMsg
+      const customRoomsRaw = localStorage.getItem("cc_custom_chat_rooms");
+      if (customRoomsRaw) {
+        const customRooms = JSON.parse(customRoomsRaw);
+        const roomIdx = customRooms.findIndex((r: any) => r.id === activeChat);
+        if (roomIdx !== -1) {
+          customRooms[roomIdx].lastMsg = outgoing.text;
+          customRooms[roomIdx].time = "now";
+          localStorage.setItem("cc_custom_chat_rooms", JSON.stringify(customRooms));
+        }
+      }
+
+      // Simulate instantaneous seller response for premium presentation feel
+      setTimeout(() => {
+        const sellerName = activeRoom?.dept.split("Seller: ")[1]?.split(" (")[0] || "Seller";
+        const reply: ChatMessage = {
+          id: `m-reply-${Date.now()}`,
+          sender: sellerName,
+          text: `Sounds great! Yes, let's meet up at the SZABIST Library / Student Cafeteria tomorrow to trade. What time suits you?`,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isMe: false,
+          type: "text",
+        };
+
+        const currentMsgsRaw = localStorage.getItem(`cc_msgs_${activeChat}`);
+        const currentMsgs = currentMsgsRaw ? JSON.parse(currentMsgsRaw) : [];
+        const currentUpdated = [...currentMsgs, reply];
+        localStorage.setItem(`cc_msgs_${activeChat}`, JSON.stringify(currentUpdated));
+
+        if (activeChat === activeChat) {
+          setMsgs(currentUpdated);
+          setMessagesByRoom((prev) => ({ ...prev, [activeChat]: currentUpdated }));
+        }
+
+        const roomsRaw = localStorage.getItem("cc_custom_chat_rooms");
+        if (roomsRaw) {
+          const currentRooms = JSON.parse(roomsRaw);
+          const roomIdx = currentRooms.findIndex((r: any) => r.id === activeChat);
+          if (roomIdx !== -1) {
+            currentRooms[roomIdx].lastMsg = reply.text;
+            currentRooms[roomIdx].time = "now";
+            localStorage.setItem("cc_custom_chat_rooms", JSON.stringify(currentRooms));
+          }
+        }
+        loadRooms();
+      }, 1500);
+      return;
+    }
+
     try { await chatApi.sendMessage(activeChat, outgoing.text); } catch { /* keep optimistic UI */ }
     loadRooms();
   };
@@ -300,16 +384,21 @@ export function Chats() {
       };
       reader.readAsDataURL(file);
     } else {
-      const outgoing: ChatMessage = {
-        id: `m-local-${Date.now()}`,
-        sender: "Me", text: `📎 ${file.name}`,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        isMe: true, type: "file", fileName: file.name,
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        const outgoing: ChatMessage = {
+          id: `m-local-${Date.now()}`,
+          sender: "Me", text: `📎 ${file.name}`,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isMe: true, type: "file", fileName: file.name, fileData: dataUrl,
+        };
+        setMsgs((prev) => [...prev, outgoing]);
+        setMessagesByRoom((prev) => ({ ...prev, [activeChat]: [...(prev[activeChat] ?? []), outgoing] }));
+        try { await chatApi.sendMessage(activeChat, `📎 ${file.name}`, { type: "file", fileData: dataUrl, fileName: file.name }); } catch { /**/ }
+        loadRooms();
       };
-      setMsgs((prev) => [...prev, outgoing]);
-      setMessagesByRoom((prev) => ({ ...prev, [activeChat]: [...(prev[activeChat] ?? []), outgoing] }));
-      try { await chatApi.sendMessage(activeChat, `📎 ${file.name}`, { type: "file", fileName: file.name }); } catch { /**/ }
-      loadRooms();
+      reader.readAsDataURL(file);
     }
   };
 
@@ -379,12 +468,22 @@ export function Chats() {
                     <img src={msg.fileData} alt={msg.fileName ?? "image"} className="max-w-[200px] max-h-[200px] object-cover" />
                   </div>
                 ) : msg.type === "file" ? (
-                  <div className={`px-4 py-2.5 rounded-2xl text-sm flex items-center gap-2 ${
-                    msg.isMe ? "bg-[#FF6B2B] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
-                  }`}>
-                    <FileText size={14} />
-                    <span>{msg.fileName ?? msg.text}</span>
-                  </div>
+                  // If the message includes fileData (data URL), make it clickable/downloadable.
+                  (msg.fileData ? (
+                    <a href={msg.fileData} download={msg.fileName} target="_blank" rel="noreferrer" className={`px-4 py-2.5 rounded-2xl text-sm flex items-center gap-2 ${
+                      msg.isMe ? "bg-[#FF6B2B] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
+                    }`}>
+                      <FileText size={14} />
+                      <span className="underline">{msg.fileName ?? msg.text}</span>
+                    </a>
+                  ) : (
+                    <div className={`px-4 py-2.5 rounded-2xl text-sm flex items-center gap-2 ${
+                      msg.isMe ? "bg-[#FF6B2B] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
+                    }`}>
+                      <FileText size={14} />
+                      <span>{msg.fileName ?? msg.text}</span>
+                    </div>
+                  ))
                 ) : (
                   <div className={`px-4 py-2.5 rounded-2xl text-sm ${
                     msg.isMe ? "bg-[#FF6B2B] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
